@@ -39,9 +39,10 @@
     </modules>
 
     <properties>
+        <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
         <weld.jupiter.version>4.0.0.Final</weld.jupiter.version>
-        <tinkerpop.version>3.6.2</tinkerpop.version>
-        <neo4j.connector.version>0.9-3.4.0</neo4j.connector.version>
+        <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
+        <jakarta-el.version>4.0.2</jakarta-el.version>
     </properties>
 
     <dependencies>
@@ -51,9 +52,26 @@
             <version>${jakarta.nosql.version}</version>
         </dependency>
         <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>${jakarta.validation-api.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.weld.se</groupId>
             <artifactId>weld-se-core</artifactId>
             <version>${weld.se.core.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>${hibernate-validator.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.el</artifactId>
+            <version>${jakarta-el.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -14,19 +14,25 @@
  */
 package org.eclipse.jnosql.mapping.column;
 
+import jakarta.validation.Validator;
+import jakarta.validation.Validation;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ValidatorFactory;
+import jakarta.validation.ConstraintViolationException;
 import org.eclipse.jnosql.communication.column.ColumnEntity;
 
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * This implementation defines the workflow to insert an Entity on {@link jakarta.nosql.column.ColumnTemplate}.
  * The default implementation follows:
- *  <p>{@link ColumnEventPersistManager#firePreEntity(Object)}</p>
- *  <p>{@link ColumnEntityConverter#toColumn(Object)}</p>
- *  <p>Database alteration</p>
- *  <p>{@link ColumnEventPersistManager#firePostEntity(Object)}</p>
+ * <p>{@link ColumnEventPersistManager#firePreEntity(Object)}</p>
+ * <p>{@link ColumnEntityConverter#toColumn(Object)}</p>
+ * <p>Database alteration</p>
+ * <p>{@link ColumnEventPersistManager#firePostEntity(Object)}</p>
  */
 public abstract class ColumnWorkflow {
 
@@ -54,7 +60,7 @@ public abstract class ColumnWorkflow {
     }
 
     private <T> Function<T, T> getFlow(T entity, UnaryOperator<ColumnEntity> action) {
-        UnaryOperator<T> validation = t -> Objects.requireNonNull(t, "entity is required");
+        UnaryOperator<T> validation = this::validate;
 
         UnaryOperator<T> firePreEntity = t -> {
             getEventManager().firePreEntity(t);
@@ -78,5 +84,28 @@ public abstract class ColumnWorkflow {
                 .andThen(action)
                 .andThen(converterEntity)
                 .andThen(firePostEntity);
+    }
+
+    private <T> T validate(T entity) {
+        Objects.requireNonNull(entity, "entity is required");
+
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
+            Validator validator = validatorFactory.getValidator();
+
+            final var constraintViolations = validator.validate(entity);
+            if (!constraintViolations.isEmpty()) {
+                var violations = constraintViolations
+                        .stream()
+                        .map(ConstraintViolation::toString)
+                        .collect(Collectors.joining("\n"));
+
+                var violationMessage = "Validation failed for %s \nList of constraint violations: [\n%s]"
+                        .formatted(entity.getClass().getName(), violations);
+
+                throw new ConstraintViolationException(violationMessage, constraintViolations);
+            }
+        }
+
+        return entity;
     }
 }
